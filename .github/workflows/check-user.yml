@@ -13,24 +13,23 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    - name: Trigger Jenkins Job
+    - name: Trigger Jenkins Job (debug)
       run: |
-        set -e
-        
         echo "Checking user: ${{ github.event.inputs.username }}"
+        echo "JENKINS_URL=${{ secrets.JENKINS_URL }}"
+        echo "JOB_NAME=${{ secrets.JOB_NAME }}"
         
-        CRUMB_JSON=$(curl -s -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
-          "${{ secrets.JENKINS_URL }}/crumbIssuer/api/json")
+        echo "=== Fetch crumb ==="
+        curl -v \
+          -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
+          "${{ secrets.JENKINS_URL }}/crumbIssuer/api/json" || true
         
-        CRUMB=$(echo "$CRUMB_JSON" | jq -r .crumb)
-        CRUMB_FIELD=$(echo "$CRUMB_JSON" | jq -r .crumbRequestField)
-        
-        echo "Using crumb field: $CRUMB_FIELD"
-        
+        echo "=== Trigger job ==="
         curl -v -X POST \
           -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
-          -H "$CRUMB_FIELD: $CRUMB" \
-          "${{ secrets.JENKINS_URL }}/job/${{ secrets.JOB_NAME }}/buildWithParameters?USERNAME=${{ github.event.inputs.username }}"
-
-      
+          "${{ secrets.JENKINS_URL }}/job/${{ secrets.JOB_NAME }}/buildWithParameters?USERNAME=${{ github.event.inputs.username }}" || true
+        
+        echo "DONE"${{ secrets.JENKINS_URL }}/job/${{ secrets.JOB_NAME }}/buildWithParameters?USERNAME=${{ github.event.inputs.username }}"
+  
+        
 
