@@ -17,22 +17,13 @@ jobs:
         run: |
           echo "Checking user: ${{ github.event.inputs.username }}"
 
+          CRUMB=$(curl -s -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
+            "${{ secrets.JENKINS_URL }}/crumbIssuer/api/json" | jq -r .crumb)
+
           curl -s -X POST \
             -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
+            -H "Jenkins-Crumb: $CRUMB" \
             "${{ secrets.JENKINS_URL }}/job/${{ secrets.JOB_NAME }}/buildWithParameters?USERNAME=${{ github.event.inputs.username }}"
 
-          sleep 10
-
-          RESULT=$(curl -s \
-            -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
-            "${{ secrets.JENKINS_URL }}/job/${{ secrets.JOB_NAME }}/lastBuild/api/json" \
-            | jq -r .result)
-
-          if [ "$RESULT" = "SUCCESS" ]; then
-            echo "User EXISTS"
-            exit 0
-          else
-            echo "User does NOT exist"
-            exit 1
-          fi
+      
 
