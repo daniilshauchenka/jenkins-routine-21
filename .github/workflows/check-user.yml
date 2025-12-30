@@ -13,6 +13,16 @@ jobs:
     runs-on: self-hosted
 
     steps:
+
+    - name: Network debug
+      run: |
+        whoami
+        hostname
+        ip a
+        curl -v http://127.0.0.1:8082/login || true
+        curl -v http://localhost:8082/login || true
+        curl -v http://192.168.200.185:8082/login || true
+
     - name: Trigger Jenkins Job (debug)
       run: |
         echo "Checking user: ${{ github.event.inputs.username }}"
