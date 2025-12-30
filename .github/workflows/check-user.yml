@@ -1,0 +1,22 @@
+name: Check Linux User via Jenkins
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: 'Linux username to check'
+        required: true
+        default: 'root'
+
+jobs:
+  check-user:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Call Jenkins Job
+        run: |
+          echo "Checking user: ${{ github.event.inputs.username }}"
+
+          curl -X POST \
+            "http://JENKINS_URL/job/check-linux-user/buildWithParameters?USERNAME=${{ github.event.inputs.username }}" \
+            --user "$JENKINS_USER:$JENKINS_API_TOKEN"
