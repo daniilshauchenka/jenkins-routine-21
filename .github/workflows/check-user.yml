@@ -13,17 +13,24 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Trigger Jenkins Job
-        run: |
-          echo "Checking user: ${{ github.event.inputs.username }}"
-
-          CRUMB=$(curl -s -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
-            "${{ secrets.JENKINS_URL }}/crumbIssuer/api/json" | jq -r .crumb)
-
-          curl -s -X POST \
-            -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
-            -H "Jenkins-Crumb: $CRUMB" \
-            "${{ secrets.JENKINS_URL }}/job/${{ secrets.JOB_NAME }}/buildWithParameters?USERNAME=${{ github.event.inputs.username }}"
+    - name: Trigger Jenkins Job
+      run: |
+        set -e
+        
+        echo "Checking user: ${{ github.event.inputs.username }}"
+        
+        CRUMB_JSON=$(curl -s -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
+          "${{ secrets.JENKINS_URL }}/crumbIssuer/api/json")
+        
+        CRUMB=$(echo "$CRUMB_JSON" | jq -r .crumb)
+        CRUMB_FIELD=$(echo "$CRUMB_JSON" | jq -r .crumbRequestField)
+        
+        echo "Using crumb field: $CRUMB_FIELD"
+        
+        curl -v -X POST \
+          -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
+          -H "$CRUMB_FIELD: $CRUMB" \
+          "${{ secrets.JENKINS_URL }}/job/${{ secrets.JOB_NAME }}/buildWithParameters?USERNAME=${{ github.event.inputs.username }}"
 
       
 
