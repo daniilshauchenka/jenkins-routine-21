@@ -1,22 +1,37 @@
-name: Check Linux User via Jenkins
+name: Check User Existence via Jenkins
 
 on:
   workflow_dispatch:
     inputs:
       username:
-        description: 'Linux username to check'
+        description: 'Username to check in /etc/passwd'
         required: true
-        default: 'root'
+        type: string
 
 jobs:
-  check-user:
-    runs-on: ubuntu-latest
+  trigger-jenkins-job:
+    runs-on: self-hosted
 
     steps:
-      - name: Call Jenkins Job
+      - name: Trigger Jenkins Job
         run: |
           echo "Checking user: ${{ github.event.inputs.username }}"
 
-          curl -X POST \
-            "http://JENKINS_URL/job/check-linux-user/buildWithParameters?USERNAME=${{ github.event.inputs.username }}" \
-            --user "$JENKINS_USER:$JENKINS_API_TOKEN"
+          curl -s -X POST \
+            -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
+            "${{ secrets.JENKINS_URL }}/job/${{ secrets.JOB_NAME }}/buildWithParameters?USERNAME=${{ github.event.inputs.username }}"
+
+          sleep 10
+
+          RESULT=$(curl -s \
+            -u "${{ secrets.JENKINS_ADMIN }}:${{ secrets.JENKINS_TOKEN }}" \
+            "${{ secrets.JENKINS_URL }}/job/${{ secrets.JOB_NAME }}/lastBuild/api/json" \
+            | jq -r .result)
+
+          if [ "$RESULT" = "SUCCESS" ]; then
+            echo "User EXISTS"
+            exit 0
+          else
+            echo "User does NOT exist"
+            exit 1
+          fi
